@@ -19,7 +19,7 @@
 -- ============================================================
 
 -- ⚙️ CONFIGURE YOUR TARGET APP HERE ⚙️
-set TARGET_APP_NAME to "TARGET_APP_NAME"
+set TARGET_APP_NAME to "Amazon Quick"
 -- Examples: "Cursor", "VS Code", "Claude", "MyApp"
 -- Find your app name: ps aux | grep -i "your-app" | grep -v grep
 
@@ -28,7 +28,7 @@ set clickCount to 0
 set loopCount to 0
 set errorCount to 0
 set switchCount to 0
-set drainMax to 20
+set drainMax to 2
 set cooldownSessions to {}
 set cooldownExpiry to {}
 set cooldownDuration to 60
@@ -173,7 +173,7 @@ repeat
 																	click elem
 																	set foundBtn to btnName
 																	exit repeat
-																else if btnName is "Allow" then
+																else if btnName starts with "Allow" then
 																	set allowBtn to elem
 																else if btnName is "Yes" then
 																	set yesBtn to elem
@@ -262,7 +262,7 @@ repeat
 														click elem
 														set foundBtn to btnName
 														exit repeat
-													else if btnName is "Allow" then
+													else if btnName starts with "Allow" then
 														set allowBtn to elem
 													else if btnName is "Yes" then
 														set yesBtn to elem
@@ -351,9 +351,9 @@ repeat
 	else
 		set idleRounds to idleRounds + 1
 		if idleRounds ≥ 200 then
-			set currentDelay to 5
+			set currentDelay to 1
 		else if idleRounds ≥ 50 then
-			set currentDelay to 2
+			set currentDelay to 1
 		else if idleRounds ≥ 10 then
 			set currentDelay to 1
 		else
