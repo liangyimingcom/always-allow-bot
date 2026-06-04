@@ -1,8 +1,13 @@
 -- ============================================================
--- AlwaysAllow Bot v6.1 — macOS Auto-Approve for Electron Apps
+-- AlwaysAllow Bot v6.2 — macOS Auto-Approve for Electron Apps
 --
 -- 🤖 Automatically clicks "Always Allow" / "Allow" / "Yes" buttons
 --    in Electron apps that require repeated permission confirmations.
+--
+-- V6.2 Fixes:
+--   - Increase post-switch delay to 3s for Electron render time
+--   - Reduce cooldown from 60 to 5 cycles for faster retry
+--   - Add retry scan: wait 2s and re-scan if first pass finds no buttons
 --
 -- V6.1 Fixes:
 --   - Fix "every button of entire contents" -1700 error on Electron
@@ -31,7 +36,7 @@ set switchCount to 0
 set drainMax to 2
 set cooldownSessions to {}
 set cooldownExpiry to {}
-set cooldownDuration to 60
+set cooldownDuration to 5
 set lastHeartbeat to (current date)
 set lastClickTime to (current date)
 set prevClickCount to 0
@@ -137,7 +142,7 @@ repeat
 								end tell
 								set switchCount to switchCount + 1
 								log "[" & (time string of (current date)) & "] 切换到: " & sessionName
-								delay 1
+								delay 3
 
 								-- drain loop
 								set drainCount to 0
@@ -216,8 +221,43 @@ repeat
 								end if
 
 								if drainCount is 0 then
-									set end of cooldownSessions to sessionName
-									set end of cooldownExpiry to (loopCount + cooldownDuration)
+									-- 重试: 等待渲染后再扫一次
+									delay 2
+									set foundBtn to ""
+									tell process TARGET_APP_NAME
+										try
+											set allElements to entire contents of window 1
+											repeat with elem in allElements
+												try
+													if class of elem is button then
+														set btnName to name of elem
+														if btnName is missing value then set btnName to ""
+														if btnName is not "" then
+															if btnName starts with "Always Allow" or btnName is "Always" or btnName is "始终允许" or btnName starts with "始终允许" or btnName starts with "Allow" or btnName is "Yes" then
+																set isBlocked to false
+																if btnName contains "Reject" or btnName contains "Deny" or btnName contains "Cancel" or btnName contains "Block" or btnName contains "拒绝" or btnName contains "取消" then
+																	set isBlocked to true
+																end if
+																if not isBlocked then
+																	click elem
+																	set foundBtn to btnName
+																	exit repeat
+																end if
+															end if
+														end if
+													end if
+												end try
+											end repeat
+										end try
+									end tell
+									if foundBtn is not "" then
+										set clickCount to clickCount + 1
+										set drainCount to 1
+										log "[" & (time string of (current date)) & "] #" & clickCount & " 点击(重试): " & foundBtn
+									else
+										set end of cooldownSessions to sessionName
+										set end of cooldownExpiry to (loopCount + cooldownDuration)
+									end if
 								end if
 							end if
 						end try
